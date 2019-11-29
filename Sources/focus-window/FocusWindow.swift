@@ -7,8 +7,7 @@ final class FocusWindow {
       exit(1)
     }
 
-    let options = CGWindowListOption(arrayLiteral: .optionOnScreenOnly)
-    let windowList = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as! [[String: Any]]
+    let windowList = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as! [[String: Any]]
 
     guard
       let cgWindow = (windowList.first { $0[kCGWindowNumber as String] as! Int == windowNumber })

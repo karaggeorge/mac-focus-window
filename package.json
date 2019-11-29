@@ -2,7 +2,6 @@
   "name": "mac-focus-window",
   "version": "1.0.0",
   "description": "Focus a window and bring it to the front on macOS",
-  "main": "index.js",
   "repository": "https://github.com/karaggeorge/mac-focus-window",
   "author": {
     "name": "George Karagkiaouris",
