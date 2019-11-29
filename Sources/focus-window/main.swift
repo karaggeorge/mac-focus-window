@@ -1,17 +1,17 @@
 import Cocoa
 import SwiftCLI
 
-class FocusCommand: Command {
+final class FocusCommand: Command {
     let name = "focus"
 
-    let windowNumber = Parameter()
+    let windowNumber = Param.Required<Int>()
 
     func execute() throws {
-      print(FocusWindow.focusWindow(windowNumber.value))
+      FocusWindow.focusWindow(windowNumber: windowNumber.value)
     }
 }
 
-class CheckPermissionsCommand: Command {
+final class CheckPermissionsCommand: Command {
     let name = "check"
 
     func execute() throws {
@@ -19,15 +19,15 @@ class CheckPermissionsCommand: Command {
     }
 }
 
-class AskPermissionsCommand: Command {
+final class AskPermissionsCommand: Command {
     let name = "ask"
 
     func execute() throws {
-      print(FocusWindow.isTrusted(true))
+      print(FocusWindow.isTrusted(shouldAsk: true))
     }
 }
 
-class PermissionsGroup: CommandGroup {
+final class PermissionsGroup: CommandGroup {
   let name = "permissions"
   let shortDescription = "Check or ask for Accessibility permissions"
   let children: [Routable] = [CheckPermissionsCommand(), AskPermissionsCommand()]
@@ -36,4 +36,4 @@ class PermissionsGroup: CommandGroup {
 
 let selectWindow = CLI(name: "focus-window")
 selectWindow.commands = [FocusCommand(), PermissionsGroup()]
-selectWindow.go()
+_ = selectWindow.go()
