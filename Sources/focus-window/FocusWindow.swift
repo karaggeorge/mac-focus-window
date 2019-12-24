@@ -1,67 +1,76 @@
 import Cocoa
-import Foundation
 
-class FocusWindow {
-  static func focusWindow(_ windowNum: String) -> Bool {
+final class FocusWindow {
+  static func focusWindow(windowNumber: Int) {
     if !isTrusted() {
       print("Missing Accessibility Permissions", to: .standardError)
       exit(1)
     }
 
-    if let windowNumber = Int(windowNum) {
-      let options = CGWindowListOption(arrayLiteral: CGWindowListOption.optionOnScreenOnly)
-      let windowList = (CGWindowListCopyWindowInfo(options, kCGNullWindowID) as! NSArray).map { $0 as! NSDictionary }
+    let windowList = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as! [[String: Any]]
 
-      if let cgWindow = windowList.first(where: { $0.value(forKey: "kCGWindowNumber") as! Int == windowNumber }) {
-        let ownerPid = cgWindow.value(forKey: "kCGWindowOwnerPID") as! Int
-
-        let index = windowList.filter {
-          $0.value(forKey: "kCGWindowOwnerPID") as! Int == ownerPid
-        }.firstIndex(where: {
-          $0.value(forKey: "kCGWindowNumber") as! Int == windowNumber
-        })
-
-        if let axWindows = attribute(AXUIElementCreateApplication(pid_t(ownerPid)), kAXWindowsAttribute, [AXUIElement].self) {
-          if axWindows.count > index! {
-            let axWindow = axWindows[index!]
-            if let app = NSRunningApplication(processIdentifier: pid_t(ownerPid)) {
-                app.activate(options: [.activateIgnoringOtherApps])
-                AXUIElementPerformAction(axWindow, kAXRaiseAction as CFString)
-                return true
-            }
-          }
-        }
-      } else {
-          print("Window not found", to: .standardError)
-          exit(1)
-      }
-    } else {
-      print("Window number is not a number", to: .standardError)
+    guard
+      let cgWindow = (windowList.first { $0[kCGWindowNumber as String] as! Int == windowNumber })
+    else {
+      print("Window not found", to: .standardError)
       exit(1)
     }
 
-    return false
+    let ownerPID = cgWindow[kCGWindowOwnerPID as String] as! Int
+
+    let maybeIndex = windowList
+      .filter { $0[kCGWindowOwnerPID as String] as! Int == ownerPID }
+      .firstIndex { $0[kCGWindowNumber as String] as! Int == windowNumber }
+
+    guard
+      let axWindows = attribute(
+        element: AXUIElementCreateApplication(pid_t(ownerPID)),
+        key: kAXWindowsAttribute,
+        type: [AXUIElement].self
+      ),
+      let index = maybeIndex,
+      axWindows.count > index,
+      let app = NSRunningApplication(processIdentifier: pid_t(ownerPID))
+    else {
+      print("Window not found", to: .standardError)
+      exit(1)
+    }
+
+    let axWindow = axWindows[index]
+    app.activate(options: [.activateIgnoringOtherApps])
+    AXUIElementPerformAction(axWindow, kAXRaiseAction as CFString)
   }
 
-  static func isTrusted(_ shouldAsk: Bool = false) -> Bool {
-    return AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": shouldAsk] as CFDictionary)
+  static func isTrusted(shouldAsk: Bool = false) -> Bool {
+    AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": shouldAsk] as CFDictionary)
   }
 
-  private static func attribute<T>(_ element: AXUIElement, _ key: String, _ type: T.Type) -> T? {
+  private static func attribute<T>(element: AXUIElement, key: String, type: T.Type) -> T? {
     var value: AnyObject?
     let result = AXUIElementCopyAttributeValue(element, key as CFString, &value)
-    if result == .success, let typedValue = value as? T {
-        return typedValue
+
+    guard
+      result == .success,
+      let typedValue = value as? T
+    else {
+      return nil
     }
-    return nil
+
+    return typedValue
   }
 
-  private static func value<T>(_ element: AXUIElement, _ key: String, _ target: T, _ type: AXValueType) -> T? {
-      if let a = attribute(element, key, AXValue.self) {
-          var value = target
-          AXValueGetValue(a, type, &value)
-          return value
+  private static func value<T>(
+    element: AXUIElement,
+    key: String,
+    target: T,
+    type: AXValueType
+  ) -> T? {
+      guard let attribute = self.attribute(element: element, key: key, type: AXValue.self) else {
+        return nil
       }
-      return nil
+
+      var value = target
+      AXValueGetValue(attribute, type, &value)
+      return value
   }
 }

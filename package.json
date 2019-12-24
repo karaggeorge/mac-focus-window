@@ -2,7 +2,6 @@
   "name": "mac-focus-window",
   "version": "1.0.0",
   "description": "Focus a window and bring it to the front on macOS",
-  "main": "index.js",
   "repository": "https://github.com/karaggeorge/mac-focus-window",
   "author": {
     "name": "George Karagkiaouris",
@@ -10,19 +9,18 @@
     "url": "https://gkaragkiaouris.tech"
   },
   "license": "MIT",
-  "private": false,
   "scripts": {
     "test": "xo",
     "build": "swift build --configuration=release && mv .build/release/focus-window .",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "electron-util": "^0.12.1",
-    "execa": "^2.0.4",
+    "electron-util": "^0.13.0",
+    "execa": "^3.4.0",
     "macos-version": "^5.2.0"
   },
   "devDependencies": {
-    "xo": "^0.24.0"
+    "xo": "^0.25.3"
   },
   "files": [
     "index.js",
